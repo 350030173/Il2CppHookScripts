@@ -115,8 +115,7 @@ class Breaker {
                     if (!detailLog) {
                         // 精简版 B() 针对单个classes/Images
                         let cacheID = `[${++Breaker.callTimesInline}|${new Date().toLocaleTimeString().split(" ")[0]}]`
-                        this.passValue = new ValueResolve(cacheID, method).setArgs(args)
-                        return LOGD((this.passValue as ValueResolve).toString())
+                        return LOGD(InnerCall(cacheID, method, args))
                     } else {
                         // 详细版 b() 针对单个函数
                         let tmp_content = []
@@ -301,6 +300,24 @@ class Breaker {
         if (detachAll) D()
         Breaker.array_methodValue_cache.slice(start, end).forEach(LOGD)
     }
+}
+
+
+const InnerCall = (cacheID: string, method: Il2Cpp.Method, args: InvocationArguments) => {
+    let addressInfo = ` ${method.handle} -> ${method.relativeVirtualAddress} `
+    let append = ""
+    let length = String(method.class.handle).length + 1
+    try {
+        append += ","
+        append += formartClass.alignStr(String(args[0]), length, " ")
+    } catch {
+        append += "  "
+        append += formartClass.getLine(length, " ")
+    }
+    let classInfo = `${formartClass.alignStr(method.class.name, 18)}(${method.class.handle}${append.trim()})`
+    let infoContent = `===>  ${methodToString(method, true)}\t `
+    let retStr = `${cacheID}\t${addressInfo}\t|  ${classInfo}  ${infoContent}`
+    return retStr
 }
 
 globalThis.getPlatform = (): string => (Process.platform == "linux" && Process.pageSize == 0x4) ? "arm" : "arm64"
